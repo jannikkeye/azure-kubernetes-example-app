@@ -1,0 +1,48 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgres
+  namespace: ingress-example
+spec:
+  selector:
+    matchLabels:
+      app: postgres
+  serviceName: postgres
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: postgres
+    spec:
+      containers:
+        - name: postgres-database
+          image: postgres
+          volumeMounts:
+            - name: postgres-disk
+              mountPath: /var/lib/postgresql/data
+          env:
+            - name:  POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name:  mysecret
+                  key:  PG_USER
+            - name:  POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name:  mysecret
+                  key:  PG_PASSWORD
+            - name:  POSTGRES_DATABASE
+              valueFrom:
+                secretKeyRef:
+                  name:  mysecret
+                  key:  PG_DATABASE
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+  volumeClaimTemplates:
+    - metadata:
+        name: postgres-disk
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 10Gi

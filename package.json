@@ -1,0 +1,28 @@
+{
+  "name": "azure-kubernetes-example-app",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start:serviceA": "ts-node serviceA.ts",
+    "start:serviceB": "ts-node serviceB.ts",
+    "docker:up": "PG_USER=nginx-pgsql-basic-example PG_PASSWORD=supersecret PG_DB=test docker-compose up",
+    "k:apply:all": "kubectl -n ingress-example apply -f ./manifests/namespaces -f ./manifests/deployments -f ./manifests/services -f ./manifests/ingress -f ./manifests/secrets"
+  },
+  "keywords": [
+    "azure",
+    "kubernetes"
+  ],
+  "author": "Jannik Keye",
+  "license": "ISC",
+  "dependencies": {
+    "fastify": "^3.8.0",
+    "pg": "^8.5.1",
+    "ts-node": "^9.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^14.14.9",
+    "@types/pg": "^7.14.7",
+    "typescript": "^4.1.2"
+  }
+}

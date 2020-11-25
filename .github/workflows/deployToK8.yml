@@ -1,0 +1,52 @@
+name: deploy
+on:
+  push:
+    branches:
+      - "main"
+env:
+  ACR_SERVER: janisis.azurecr.io
+  CLUSTER_NAME: janisis
+  NAMESPACE: ingress-example
+  RESOURCE_GROUP: janisis
+jobs:
+  build-secure-and-push:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@master
+    - uses: azure/docker-login@v1
+      with:
+        login-server: ${{env.ACR_SERVER}}
+        username: ${{ secrets.ACR_USER }}
+        password: ${{ secrets.ACR_PASSWORD }}
+    - run: docker build . -f Dockerfile.serviceA -t ${{env.ACR_SERVER}}/servicea:${{github.sha}}
+    - run: docker build . -f Dockerfile.serviceB -t ${{env.ACR_SERVER}}/serviceb:${{github.sha}}
+    - uses: azure/container-scan@v0
+      with:
+        image-name: ${{env.ACR_SERVER}}/servicea:${{github.sha}}
+    - uses: azure/container-scan@v0
+      with:
+        image-name: ${{env.ACR_SERVER}}/serviceb:${{github.sha}}
+    - run: docker push ${{env.ACR_SERVER}}/servicea:${{github.sha}}
+    - run: docker push ${{env.ACR_SERVER}}/serviceb:${{github.sha}}
+    - uses: azure/aks-set-context@v1
+      with:
+        creds: ${{secrets.AZURE_CREDENTIALS}}
+        cluster-name: ${{env.CLUSTER_NAME}}
+        resource-group: ${{env.RESOURCE_GROUP}}
+    - run: kubectl create namespace ${{env.NAMESPACE}} --dry-run -o json | kubectl apply -f -
+    - uses: azure/k8s-create-secret@v1
+      with:
+        container-registry-url: ${{env.ACR_SERVER}}
+        container-registry-username: ${{ secrets.ACR_USER }}
+        container-registry-password: ${{ secrets.ACR_PASSWORD }}
+        secret-name: ${{env.ACR_SERVER}}-registry-connection
+        namespace: ${{env.NAMESPACE}}
+    - uses: azure/k8s-deploy@v1
+      with:
+        manifests: manifests/all-in-one.yml
+        images: |
+          ${{env.ACR_SERVER}}/servicea:${{github.sha}}
+          ${{env.ACR_SERVER}}/serviceb:${{github.sha}}
+        imagepullsecrets: |
+          ${{env.ACR_SERVER}}-registry-connection
+        namespace: ${{env.NAMESPACE}}

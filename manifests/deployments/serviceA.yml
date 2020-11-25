@@ -1,0 +1,47 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: servicea
+  namespace: ingress-example
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: servicea
+  template:
+    metadata:
+      labels:
+        app: servicea
+        editor: vscode
+    spec:
+      containers:
+      - name: servicea
+        image: janisis.azurecr.io/servicea
+        env:
+          - name: HOST
+            value: 0.0.0.0
+          - name: PORT
+            value: "3000"
+          - name:  PG_HOST
+            valueFrom:
+              secretKeyRef:
+                name:  mysecret
+                key:  PG_HOST
+          - name:  PG_USER
+            valueFrom:
+              secretKeyRef:
+                name:  mysecret
+                key:  PG_USER
+          - name:  PG_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name:  mysecret
+                key:  PG_PASSWORD
+          - name:  PG_DATABASE
+            valueFrom:
+              secretKeyRef:
+                name:  mysecret
+                key:  PG_DATABASE
+        ports:
+        - containerPort: 3000
+          name: api
